@@ -3,814 +3,408 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="GuiaScan"/>
-<meta name="theme-color" content="#0A0F1E"/>
-<title>GuiaScan — Logística</title>
-<link rel="manifest" href="manifest.json"/>
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<title>Inversiones Bestcol — Logística</title>
+<!-- Añade aquí los scripts de HTML5-QRCode y PDF.js si los tienes en CDNs -->
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#0A0F1E;--sur:#111827;--sur2:#1a2235;
+/* ═══ 1. VARIABLES Y BASE ═══ */
+* { box-sizing:border-box; margin:0; padding:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; }
+:root {
+  --bg:#0A0F1E; --sur:#111827; --sur2:#1a2235;
   --bor:rgba(255,255,255,0.08);
-  --ac:#00E5FF;--ac2:#00B4CC;
-  --gr:#00D68F;--gr2:rgba(0,214,143,0.12);
-  --rd:#FF4D6A;--rd2:rgba(255,77,106,0.12);
-  --yw:#FFB800;--yw2:rgba(255,184,0,0.12);
-  --tx:#E8EDF5;--txm:#6B7A99;
-  --st:env(safe-area-inset-top);--sb:env(safe-area-inset-bottom)
+  --ac:#00E5FF; --ac2:#00B4CC;
+  --gr:#00D68F; --rd:#FF4D6A; --rd2:rgba(255,77,106,0.15);
+  --tx:#E8EDF5; --txm:#6B7A99;
 }
-html,body{height:100%;background:var(--bg);color:var(--tx);font-family:'Inter',sans-serif;overflow:hidden;-webkit-tap-highlight-color:transparent}
-#app{display:flex;flex-direction:column;height:100dvh;padding-top:var(--st)}
+body { background:var(--bg); color:var(--tx); height:100vh; overflow:hidden; }
+#app { display:flex; flex-direction:column; height:100vh; max-width:480px; margin:0 auto; border-left:1px solid var(--bor); border-right:1px solid var(--bor); }
 
-/* HEADER */
-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px 12px;background:var(--sur);border-bottom:1px solid var(--bor);flex-shrink:0}
-.logo{display:flex;align-items:center;gap:10px}
-.logo-ic{width:34px;height:34px;background:linear-gradient(135deg,var(--ac),var(--ac2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
-.logo-tx{font-size:22px;font-weight:700;letter-spacing:1px}
-.logo-tx span{color:var(--ac)}
-.logo-by{font-size:9px;font-weight:400;color:var(--txm);letter-spacing:.5px;margin-top:-2px;opacity:.6}
-.stats{display:flex;gap:6px}
-.chip{display:flex;align-items:center;gap:5px;background:var(--sur2);border:1px solid var(--bor);border-radius:20px;padding:4px 10px;font-size:12px;font-weight:600;color:var(--txm)}
-.chip .dot{width:6px;height:6px;border-radius:50%}
-.chip.rev .dot{background:var(--gr)}
-.chip.pen .dot{background:var(--yw)}
-.chip .n{color:var(--tx)}
+/* ═══ 2. HEADER Y NAVEGACIÓN ═══ */
+header { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; background:var(--sur); border-bottom:1px solid var(--bor); flex-shrink:0; }
+.logo { display:flex; align-items:center; gap:10px; }
+.logo-ic { width:34px; height:34px; background:linear-gradient(135deg,var(--ac),var(--ac2)); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:18px; color:#0A0F1E; }
+.logo-tx { font-size:18px; font-weight:700; letter-spacing:0.5px; }
+.logo-tx span { color:var(--ac); }
+.logo-by { font-size:10px; color:var(--txm); }
 
-/* TABS */
-.tabs{display:flex;background:var(--sur);border-bottom:1px solid var(--bor);flex-shrink:0}
-.tab{flex:1;padding:11px 4px;font-size:13px;font-weight:600;color:var(--txm);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;touch-action:manipulation}
-.tab.active{color:var(--ac);border-bottom-color:var(--ac)}
+.tabs { display:flex; background:var(--sur); border-bottom:1px solid var(--bor); flex-shrink:0; }
+.tab { flex:1; padding:12px 0; font-size:11px; font-weight:600; color:var(--txm); border:none; background:none; cursor:pointer; border-bottom:2px solid transparent; text-align:center; }
+.tab.active { color:var(--ac); border-bottom-color:var(--ac); }
 
-/* VIEWS */
-.view{display:none;flex:1;overflow:hidden;flex-direction:column}
-.view.active{display:flex}
+/* ═══ 3. VISTAS ═══ */
+.view { flex:1; overflow-y:auto; padding:16px; display:none; flex-direction:column; gap:16px; }
+.view.active { display:flex; }
 
-/* SCANNER */
-#vs{align-items:center;padding:14px 16px 0;gap:12px;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.qrbox{width:100%;max-width:360px;border-radius:20px;overflow:hidden;background:#000;flex-shrink:0;position:relative;min-height:280px}
-#qrr{width:100%!important;border:none!important;background:transparent!important}
-#qrr video{width:100%!important;display:block;object-fit:cover}
-#qrr img{display:none!important}
-#qrr__scan_region{background:transparent!important;border:none!important}
-#qrr__dashboard{display:none!important}
-.corners{position:absolute;inset:0;pointer-events:none;z-index:10;display:none}
-.sline{position:absolute;left:10%;width:80%;height:2px;background:linear-gradient(90deg,transparent,var(--ac),transparent);box-shadow:0 0 8px var(--ac);border-radius:1px;animation:sm 2s ease-in-out infinite}
-@keyframes sm{0%{top:10%;opacity:0}10%{opacity:1}90%{opacity:1}100%{top:90%;opacity:0}}
-.cr{position:absolute;width:28px;height:28px;border-color:var(--ac);border-style:solid}
-.cr.tl{top:12px;left:12px;border-width:3px 0 0 3px;border-radius:4px 0 0 0}
-.cr.tr{top:12px;right:12px;border-width:3px 3px 0 0;border-radius:0 4px 0 0}
-.cr.bl{bottom:12px;left:12px;border-width:0 0 3px 3px;border-radius:0 0 0 4px}
-.cr.br{bottom:12px;right:12px;border-width:0 3px 3px 0;border-radius:0 0 4px 0}
-.camph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--txm);font-size:13px;background:#000;z-index:5}
-.camph .phi{font-size:52px;opacity:.2}
-.camst{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);border:1px solid var(--bor);border-radius:20px;padding:5px 16px;font-size:12px;color:var(--txm);white-space:nowrap;z-index:20}
+/* ═══ 4. UI INVENTARIO PROFESIONAL ═══ */
+.inv-header { display:flex; justify-content:space-between; align-items:center; background:var(--sur); padding:16px; border-radius:14px; border:1px solid var(--bor); }
+.slbl { font-size:10px; font-weight:600; text-transform:uppercase; color:var(--txm); margin-bottom:4px; }
+.btnp { background:var(--ac); color:#0A0F1E; border:none; padding:10px; border-radius:8px; font-weight:600; cursor:pointer; flex:1; }
+.btnsm { background:var(--sur2); color:var(--ac); border:1px solid var(--bor); padding:10px; border-radius:8px; font-weight:600; cursor:pointer; flex:1; }
 
-.btnsc{width:100%;max-width:360px;height:58px;background:linear-gradient(135deg,var(--ac),var(--ac2));color:#0A0F1E;border:none;border-radius:14px;font-size:21px;font-weight:700;letter-spacing:1.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 24px rgba(0,229,255,.3);flex-shrink:0;touch-action:manipulation}
-.btnsc.on{background:linear-gradient(135deg,var(--rd),#c0304a);box-shadow:0 4px 24px rgba(255,77,106,.3)}
+.cat-card { background:var(--sur); border:1px solid var(--bor); border-radius:14px; padding:16px; margin-bottom:12px; }
+.cat-header { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--bor); padding-bottom:10px; margin-bottom:10px; }
+.cat-title { font-size:14px; font-weight:700; color:var(--tx); letter-spacing:1px; }
+.cat-total { font-size:13px; font-weight:600; color:var(--ac); }
 
-/* TOAST */
-.toast{width:100%;max-width:360px;border-radius:14px;padding:14px 18px;display:none;align-items:center;gap:12px;flex-shrink:0;animation:ti .3s cubic-bezier(.34,1.56,.64,1)}
-@keyframes ti{from{opacity:0;transform:scale(.9) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
-.toast.show{display:flex}
-.toast.ok{background:var(--gr2);border:1px solid rgba(0,214,143,.35)}
-.toast.no{background:var(--rd2);border:1px solid rgba(255,77,106,.35)}
-.toast.dup{background:var(--yw2);border:1px solid rgba(255,184,0,.35)}
-.tic{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
-.ok .tic{background:rgba(0,214,143,.2)}.no .tic{background:rgba(255,77,106,.2)}.dup .tic{background:rgba(255,184,0,.2)}
-.tbody{flex:1;min-width:0}
-.tlbl{font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:2px}
-.ok .tlbl{color:var(--gr)}.no .tlbl{color:var(--rd)}.dup .tlbl{color:var(--yw)}
-.tcode{font-size:19px;font-weight:700;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tsub{font-size:12px;color:var(--txm);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tprod{font-size:13px;color:var(--ac);margin-top:4px;opacity:.95;font-weight:500;line-height:1.4;word-break:break-word}
+.inv-item { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed rgba(255,255,255,0.05); }
+.inv-item:last-child { border-bottom:none; }
+.inv-info { flex:1; min-width:0; }
+.inv-name { font-size:13px; font-weight:600; color:var(--tx); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.inv-price { font-size:11px; color:var(--txm); margin-top:2px; }
 
-/* MANUAL */
-.mansec{width:100%;max-width:360px;padding-bottom:20px;flex-shrink:0}
-.slbl{font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--txm);margin-bottom:8px}
-.row{display:flex;gap:8px}
-.inp{flex:1;background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:12px 14px;font-size:14px;color:var(--tx);outline:none}
-.inp:focus{border-color:var(--ac)}
-.inp::placeholder{color:var(--txm)}
-.btnsm{background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:12px 16px;color:var(--ac);font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;touch-action:manipulation}
+.inv-stock { display:flex; align-items:center; gap:8px; }
+.stock-badge { padding:4px 8px; border-radius:6px; font-size:12px; font-weight:700; background:var(--sur2); min-width:36px; text-align:center; }
+.stock-badge.low { background:var(--rd2); color:var(--rd); border:1px solid rgba(255,77,106,0.3); }
 
-/* GUIAS */
-#vg{flex-direction:column}
-.toolbar{display:flex;gap:8px;padding:12px 16px;background:var(--sur);border-bottom:1px solid var(--bor);flex-shrink:0}
-.sbox{flex:1;position:relative}
-.sic{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--txm)}
-.sinp{width:100%;background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:10px 14px 10px 36px;font-size:14px;color:var(--tx);outline:none}
-.sinp::placeholder{color:var(--txm)}
-.filters{display:flex;gap:6px}
-.fb{padding:8px 12px;border-radius:8px;border:1px solid var(--bor);background:var(--sur2);color:var(--txm);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;touch-action:manipulation}
-.fb.active{background:rgba(0,229,255,.1);border-color:var(--ac);color:var(--ac)}
-.glist{flex:1;overflow-y:auto;padding:8px 12px;-webkit-overflow-scrolling:touch}
-.gi{display:flex;align-items:center;gap:10px;background:var(--sur);border:1px solid var(--bor);border-radius:12px;padding:10px 12px;margin-bottom:8px}
-.gi.rev{border-color:rgba(0,214,143,.3);background:linear-gradient(135deg,var(--sur),rgba(0,214,143,.05))}
-.gico{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-.rev .gico{background:var(--gr2)}.pen .gico{background:rgba(255,184,0,.1)}
-.ginf{flex:1;min-width:0}
-.gnum{font-size:15px;font-weight:700;color:var(--tx)}
-.gdest{font-size:11px;color:var(--txm);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.gprod{font-size:11px;color:var(--ac);margin-top:1px;opacity:.85;line-height:1.4;word-break:break-word}
-.gbadge{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;padding:2px 7px;border-radius:4px;flex-shrink:0}
-.gbadge.rev{background:var(--gr2);color:var(--gr)}.gbadge.pen{background:var(--yw2);color:var(--yw)}
-.gtime{font-size:11px;color:var(--txm);flex-shrink:0}
-.gdel{background:none;border:none;color:var(--txm);cursor:pointer;padding:10px;font-size:18px;min-width:40px;min-height:40px;display:flex;align-items:center;justify-content:center;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
-.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;color:var(--txm);gap:10px;font-size:14px}
+/* ═══ 5. MODALES ═══ */
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:999; align-items:center; justify-content:center; padding:16px; }
+.modal-content { background:var(--sur); width:100%; max-width:400px; border-radius:16px; border:1px solid var(--bor); padding:20px; display:flex; flex-direction:column; max-height:85vh; }
+.inp { background:var(--sur2); border:1px solid var(--bor); color:var(--tx); padding:10px; border-radius:8px; font-size:13px; width:100%; outline:none; margin-bottom:10px; }
+.inp:focus { border-color:var(--ac); }
+.btn-red { background:transparent; color:var(--rd); border:1px solid var(--rd); padding:10px; border-radius:8px; font-weight:600; cursor:pointer; }
 
-/* CONFIG */
-#vc{flex-direction:column;overflow-y:auto;padding:16px;gap:14px;-webkit-overflow-scrolling:touch}
-.stitle{font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--ac);margin-bottom:2px}
-.card{background:var(--sur);border:1px solid var(--bor);border-radius:16px;overflow:hidden}
-.crow{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--bor);cursor:pointer;touch-action:manipulation}
-.crow:last-child{border-bottom:none}
-.crow:active{background:var(--sur2)}
-.cric{width:36px;height:36px;border-radius:10px;background:var(--sur2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
-.crtx{flex:1}.crlbl{font-size:15px;font-weight:500;color:var(--tx)}.crsub{font-size:12px;color:var(--txm);margin-top:1px}
-.tgl{position:relative;width:44px;height:24px;flex-shrink:0}
-.tgl input{display:none}
-.ttr{position:absolute;inset:0;background:var(--sur2);border-radius:12px;border:1px solid var(--bor);cursor:pointer;transition:background .3s}
-.tth{position:absolute;top:2px;left:2px;width:18px;height:18px;background:var(--txm);border-radius:50%;transition:transform .3s,background .3s;pointer-events:none}
-.tgl input:checked~.ttr{background:rgba(0,229,255,.2);border-color:var(--ac)}
-.tgl input:checked~.tth{transform:translateX(20px);background:var(--ac)}
-
-.pbox{background:var(--sur);border:1px solid var(--bor);border-radius:16px;padding:16px}
-.phd{display:flex;justify-content:space-between;margin-bottom:10px}
-.plbl{font-size:14px;font-weight:500;color:var(--tx)}
-.ppct{font-size:20px;font-weight:700;color:var(--ac)}
-.pbar{height:8px;background:var(--sur2);border-radius:4px;overflow:hidden}
-.pfill{height:100%;background:linear-gradient(90deg,var(--ac),var(--gr));border-radius:4px;transition:width .5s}
-.psub{font-size:12px;color:var(--txm);margin-top:8px;text-align:center}
-
-.drop{border:2px dashed var(--bor);border-radius:14px;padding:22px 16px;text-align:center;cursor:pointer;touch-action:manipulation}
-.drop:active{border-color:var(--ac);background:rgba(0,229,255,.04)}
-.dropic{font-size:34px;margin-bottom:8px}
-.droptx{color:var(--tx);font-weight:600;font-size:15px;margin-bottom:4px}
-.dropsub{color:var(--txm);font-size:12px}
-.dropprog{display:none;margin-top:10px;font-size:12px;color:var(--ac);line-height:1.6}
-
-.ta{width:100%;background:var(--sur2);border:1px solid var(--bor);border-radius:10px;padding:12px;font-size:13px;color:var(--tx);resize:none;height:90px;outline:none}
-.ta:focus{border-color:var(--ac)}.ta::placeholder{color:var(--txm)}
-.btnp{width:100%;padding:13px;background:linear-gradient(135deg,var(--ac),var(--ac2));color:#0A0F1E;border:none;border-radius:10px;font-size:16px;font-weight:700;letter-spacing:1px;cursor:pointer;touch-action:manipulation}
-.btns{width:100%;padding:12px;background:none;border:1px solid var(--bor);border-radius:10px;font-size:15px;font-weight:600;color:var(--txm);cursor:pointer;touch-action:manipulation}
-.btnd{width:100%;padding:12px;background:var(--rd2);border:1px solid rgba(255,77,106,.3);border-radius:10px;font-size:15px;font-weight:600;color:var(--rd);cursor:pointer;touch-action:manipulation}
-
-#notif{position:fixed;top:calc(var(--st) + 76px);left:50%;transform:translateX(-50%) translateY(-16px);background:var(--sur);border:1px solid var(--bor);border-radius:12px;padding:10px 18px;font-size:13px;font-weight:500;color:var(--tx);z-index:300;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;max-width:88vw;text-align:center}
-#notif.show{opacity:1;transform:translateX(-50%) translateY(0)}
-
-@keyframes pg{0%{box-shadow:0 0 0 0 rgba(0,214,143,.6)}70%{box-shadow:0 0 0 20px rgba(0,214,143,0)}100%{box-shadow:0 0 0 0 rgba(0,214,143,0)}}
-@keyframes pr{0%{box-shadow:0 0 0 0 rgba(255,77,106,.6)}70%{box-shadow:0 0 0 20px rgba(255,77,106,0)}100%{box-shadow:0 0 0 0 rgba(255,77,106,0)}}
-.qrbox.ok{animation:pg .55s ease-out}.qrbox.err{animation:pr .55s ease-out}
-
-input[type=file]{display:none}
-::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--bor);border-radius:2px}
+.watermark { text-align:center; padding:20px; font-size:11px; color:var(--txm); opacity:0.5; margin-top:auto; }
 </style>
 </head>
 <body>
 <div id="app">
-
-<header>
-  <div class="logo">
-    <div class="logo-ic">📦</div>
-    <div>
-      <div class="logo-tx">Guia<span>Scan</span></div>
-      <div class="logo-by">by Felipe Ensuncho</div>
+  
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="logo-ic">🏢</div>
+      <div>
+        <div class="logo-tx">Inversiones <span>Bestcol</span></div>
+        <div class="logo-by">Sistema de Control Logístico</div>
+      </div>
     </div>
-  </div>
-  <div class="stats">
-    <div class="chip rev"><span class="dot"></span><span class="n" id="cRev">0</span><span>Rev</span></div>
-    <div class="chip pen"><span class="dot"></span><span class="n" id="cPen">0</span><span>Pen</span></div>
-  </div>
-</header>
+  </header>
 
-<nav class="tabs">
-  <button class="tab active" onclick="goTab('vs')">📷 ESCANEAR</button>
-  <button class="tab" onclick="goTab('vg')">📋 GUIAS</button>
-  <button class="tab" onclick="goTab('vc')">⚙️ CONFIG</button>
-</nav>
+  <!-- TABS -->
+  <nav class="tabs">
+    <button class="tab" onclick="goTab('v-scan', this)">📷 ESCANEAR</button>
+    <button class="tab active" onclick="goTab('v-inv', this)">📦 INVENTARIO</button>
+    <button class="tab" onclick="goTab('v-guias', this)">📋 GUIAS</button>
+    <button class="tab" onclick="goTab('v-conf', this)">⚙️ CONFIG</button>
+  </nav>
 
-<!-- SCANNER -->
-<div id="vs" class="view active">
-  <div class="qrbox" id="qrbox">
-    <div class="camph" id="camph"><div class="phi">📷</div><div>Toca INICIAR ESCANEO</div></div>
-    <div id="qrr"></div>
-    <div class="corners" id="corners">
-      <div class="sline"></div>
-      <div class="cr tl"></div><div class="cr tr"></div>
-      <div class="cr bl"></div><div class="cr br"></div>
-    </div>
-    <div class="camst" id="camst">Listo</div>
-  </div>
-
-  <div class="toast" id="toast">
-    <div class="tic" id="tic"></div>
-    <div class="tbody">
-      <div class="tlbl" id="tlbl"></div>
-      <div class="tcode" id="tcode"></div>
-      <div class="tsub" id="tsub"></div>
-      <div class="tprod" id="tprod"></div>
+  <!-- VISTA: ESCANEAR -->
+  <div id="v-scan" class="view">
+    <div style="text-align:center; color:var(--txm); margin-top:50px;">
+      (Aquí mantienes tu contenedor HTML5-QRCode actual)
     </div>
   </div>
 
-  <button class="btnsc" id="btnsc" onclick="toggleScan()">📷 INICIAR ESCANEO</button>
-
-  <div class="mansec">
-    <div class="slbl">Ingresar número manualmente</div>
-    <div class="row">
-      <input class="inp" id="manInp" type="text" placeholder="Ej: 36395575137.1" autocomplete="off" autocorrect="off" spellcheck="false"/>
-      <button class="btnsm" onclick="doManual()">Verificar</button>
+  <!-- VISTA: INVENTARIO -->
+  <div id="v-inv" class="view active">
+    
+    <div class="inv-header">
+      <div>
+        <div class="slbl">Total Inventario</div>
+        <div id="invTotalGlobal" style="font-size:22px; font-weight:700; color:var(--gr)">$ 0</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="slbl">Actualizado</div>
+        <div id="invFecha" style="font-size:11px; color:var(--txm)">---</div>
+      </div>
     </div>
+
+    <div style="display:flex; gap:10px;">
+      <button class="btnp" onclick="simularCargaFactura()">📥 Cargar Factura</button>
+      <button class="btnsm" onclick="abrirModalManual()">➕ Añadir Manual</button>
+    </div>
+
+    <!-- Lista Dinámica -->
+    <div id="invContenedor"></div>
+  </div>
+
+  <!-- VISTA: GUIAS -->
+  <div id="v-guias" class="view">
+    <div style="text-align:center; color:var(--txm); margin-top:50px;">(Lista de guías escaneadas)</div>
+  </div>
+
+  <!-- VISTA: CONFIGURACIÓN -->
+  <div id="v-conf" class="view">
+    <div class="slbl">Opciones de Sistema</div>
+    <button class="btnsm" onclick="limpiarDatos()">Borrar Todo el Inventario</button>
+    
+    <!-- Marca de agua minimalista -->
+    <div class="watermark">Desarrollado por Felipe Ensuncho</div>
+  </div>
+
+</div>
+
+<!-- MODAL: GESTIÓN MANUAL (Agregar / Editar) -->
+<div id="modalManual" class="modal-overlay">
+  <div class="modal-content">
+    <h3 id="modTitulo" style="color:var(--ac); margin-bottom:16px;">Añadir Producto</h3>
+    
+    <input type="hidden" id="modId">
+    <div class="slbl">Categoría</div>
+    <select id="modCat" class="inp">
+      <option value="Abrigos">Abrigos</option>
+      <option value="Manteles">Manteles</option>
+      <option value="PVC">PVC</option>
+      <option value="Insumos">Insumos</option>
+    </select>
+
+    <div class="slbl">Nombre del Producto</div>
+    <input type="text" id="modNombre" class="inp" placeholder="Ej: Abrigo Virgen del Carmen">
+
+    <div style="display:flex; gap:10px;">
+      <div style="flex:1;">
+        <div class="slbl">Cantidad</div>
+        <input type="number" id="modStock" class="inp" value="0">
+      </div>
+      <div style="flex:1;">
+        <div class="slbl">Stock Mínimo</div>
+        <input type="number" id="modMin" class="inp" value="5">
+      </div>
+    </div>
+
+    <div class="slbl">Precio Unitario ($)</div>
+    <input type="number" id="modPrecio" class="inp" value="0">
+
+    <div style="display:flex; gap:10px; margin-top:10px;">
+      <button class="btnsm" onclick="cerrarModalManual()">Cancelar</button>
+      <button class="btnp" onclick="guardarManual()">Guardar</button>
+    </div>
+    <button id="btnEliminar" class="btn-red" style="margin-top:10px; display:none;" onclick="eliminarProducto()">Eliminar Producto</button>
   </div>
 </div>
 
-<!-- GUIAS -->
-<div id="vg" class="view">
-  <div class="toolbar">
-    <div class="sbox">
-      <span class="sic">🔍</span>
-      <input class="sinp" id="sinp" type="text" placeholder="Buscar guía..." oninput="renderList()"/>
+<!-- MODAL: REVISIÓN DE FACTURAS -->
+<div id="modalFactura" class="modal-overlay">
+  <div class="modal-content" style="max-height:90vh;">
+    <h3 style="color:var(--gr); margin-bottom:10px;">Revisión de Factura</h3>
+    <p style="font-size:12px; color:var(--txm); margin-bottom:16px;">Asigna la categoría y corrige el nombre si es necesario antes de ingresar el stock.</p>
+    
+    <div id="listaEntradas" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:12px; margin-bottom:16px; padding-right:5px;"></div>
+
+    <div style="display:flex; gap:10px;">
+      <button class="btnsm" onclick="cerrarModalFactura()">Cancelar</button>
+      <button class="btnp" style="background:var(--gr); color:#000;" onclick="confirmarFactura()">✅ Ingresar al Inventario</button>
     </div>
-    <div class="filters">
-      <button class="fb active" data-f="all" onclick="setFilter('all')">Todas</button>
-      <button class="fb" data-f="pen" onclick="setFilter('pen')">⏳</button>
-      <button class="fb" data-f="rev" onclick="setFilter('rev')">✅</button>
-    </div>
-  </div>
-  <div class="glist" id="glist"></div>
-</div>
-
-<!-- CONFIG -->
-<div id="vc" class="view">
-
-  <div class="pbox">
-    <div class="phd"><div class="plbl">Progreso</div><div class="ppct" id="ppct">0%</div></div>
-    <div class="pbar"><div class="pfill" id="pfill" style="width:0%"></div></div>
-    <div class="psub" id="psub">0 de 0 guías revisadas</div>
-  </div>
-
-  <div class="stitle">📄 Importar PDF</div>
-  <div class="drop" onclick="document.getElementById('pdfFile').click()">
-    <div class="dropic">📄</div>
-    <div class="droptx">Seleccionar PDF de guías</div>
-    <div class="dropsub">Interrapidísimo y Coordinadora</div>
-    <div class="dropprog" id="pdfprog"></div>
-  </div>
-  <input type="file" id="pdfFile" accept="application/pdf" onchange="importPDF(event)"/>
-
-  <div class="stitle">📋 Agregar guías</div>
-  <div class="card">
-    <div class="crow" onclick="document.getElementById('csvFile').click()">
-      <div class="cric">📂</div>
-      <div class="crtx"><div class="crlbl">Importar CSV / TXT</div><div class="crsub">Una guía por línea</div></div>
-    </div>
-  </div>
-  <input type="file" id="csvFile" accept=".csv,.txt" onchange="importCSV(event)"/>
-
-  <div style="display:flex;flex-direction:column;gap:8px">
-    <div class="slbl">O pega los números aquí</div>
-    <textarea class="ta" id="pasteArea" placeholder="36395575137.1&#10;240050922464&#10;..."></textarea>
-    <button class="btnp" onclick="importPaste()">AGREGAR GUIAS</button>
-  </div>
-
-  <div class="stitle">⚙️ Opciones</div>
-  <div class="card">
-    <div class="crow" style="cursor:default">
-      <div class="cric">🔔</div>
-      <div class="crtx"><div class="crlbl">Sonido</div></div>
-      <label class="tgl"><input type="checkbox" id="tSound" checked onchange="savePrefs()"><div class="ttr"></div><div class="tth"></div></label>
-    </div>
-    <div class="crow" style="cursor:default">
-      <div class="cric">📳</div>
-      <div class="crtx"><div class="crlbl">Vibración</div></div>
-      <label class="tgl"><input type="checkbox" id="tVibe" checked onchange="savePrefs()"><div class="ttr"></div><div class="tth"></div></label>
-    </div>
-  </div>
-
-  <div class="stitle">💾 Datos</div>
-  <div style="display:flex;flex-direction:column;gap:8px">
-    <button class="btns" onclick="exportCSV()">📤 Exportar CSV</button>
-    <button class="btns" onclick="resetScanned()">🔄 Reiniciar escaneos</button>
-    <button class="btnd" onclick="clearAll()">🗑️ Borrar todo</button>
-  </div>
-
-  <div style="text-align:center;font-size:11px;color:var(--txm);padding:8px 0 24px">
-    GuiaScan v6.0 — Coordinadora & Interrapidísimo<br>© 2026 Felipe Ensuncho. Todos los derechos reservados.
   </div>
 </div>
-
-</div>
-<div id="notif"></div>
 
 <script>
-// ═══ STATE ═══
-var guias = {};
-var prefs = {sound:true, vibe:true};
-var filter = 'all';
-var scanner = null;
-var scanning = false;
-var lastCode = '';
-var lastTime = 0;
-var DEBOUNCE = 3000;
+/* ═══ LÓGICA CORE: INVENTARIO BESTCOL ═══ */
 
-// ═══ INIT ═══
-function init() {
-  if (typeof pdfjsLib !== 'undefined') {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  }
-  loadData(); loadPrefs();
-  renderList(); updateStats(); updateProgress();
-  document.getElementById('manInp').addEventListener('keydown', function(e){ if(e.key==='Enter') doManual(); });
+// 1. Inicialización y Persistencia en LocalStorage
+const DB_NAME = 'bestcol_inv_v1';
+let inventario = JSON.parse(localStorage.getItem(DB_NAME)) || {
+  ultimaActualizacion: new Date().toLocaleString('es-CO'),
+  categorias: ["Abrigos", "Manteles", "PVC", "Insumos"],
+  items: [
+    { id: "1", cat: "Abrigos", nombre: "Abrigo Virgen Guadalupe", stock: 12, min: 5, precio: 32000 },
+    { id: "2", cat: "Manteles", nombre: "Mantel Florenza 6 Puestos", stock: 6, min: 5, precio: 45000 }
+  ]
+};
+
+// 2. Control de Tabs
+function goTab(viewId, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(viewId).classList.add('active');
+  if(btn) btn.classList.add('active');
 }
 
-// ═══ TABS ═══
-function goTab(id) {
-  document.querySelectorAll('.tab').forEach(function(t,i){
-    t.classList.toggle('active', ['vs','vg','vc'][i]===id);
+// 3. Renderizar Inventario
+function renderInventario() {
+  const cont = document.getElementById('invContenedor');
+  let html = '';
+  let totalGlobal = 0;
+
+  inventario.categorias.forEach(cat => {
+    const itemsCat = inventario.items.filter(i => i.cat === cat);
+    if(itemsCat.length === 0) return;
+
+    let subtotal = 0;
+    const itemsHtml = itemsCat.map(item => {
+      subtotal += (item.stock * item.precio);
+      const isLow = item.stock <= item.min;
+      const badgeClass = isLow ? 'stock-badge low' : 'stock-badge';
+      const alertIcon = isLow ? '⚠️ ' : '';
+
+      return `
+        <div class="inv-item" onclick="abrirModalManual('${item.id}')" style="cursor:pointer;">
+          <div class="inv-info">
+            <div class="inv-name">${alertIcon}${item.nombre}</div>
+            <div class="inv-price">$${item.precio.toLocaleString('es-CO')} x unidad</div>
+          </div>
+          <div class="inv-stock">
+            <span class="${badgeClass}">${item.stock}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    totalGlobal += subtotal;
+    html += `
+      <div class="cat-card">
+        <div class="cat-header">
+          <div class="cat-title">${cat}</div>
+          <div class="cat-total">$ ${subtotal.toLocaleString('es-CO')}</div>
+        </div>
+        <div>${itemsHtml}</div>
+      </div>
+    `;
   });
-  document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
-  document.getElementById(id).classList.add('active');
-  if (id !== 'vs') stopScan();
-  if (id === 'vg') renderList();
-  if (id === 'vc') updateProgress();
+
+  cont.innerHTML = html;
+  document.getElementById('invTotalGlobal').textContent = '$ ' + totalGlobal.toLocaleString('es-CO');
+  document.getElementById('invFecha').textContent = inventario.ultimaActualizacion;
 }
 
-// ═══ SCANNER ═══
-function toggleScan() {
-  if (scanning) stopScan(); else startScan();
+// 4. Guardar Cambios
+function guardarEstado() {
+  inventario.ultimaActualizacion = new Date().toLocaleString('es-CO');
+  localStorage.setItem(DB_NAME, JSON.stringify(inventario));
+  renderInventario();
 }
 
-function startScan() {
-  setStatus('Iniciando...');
-  try {
-    scanner = new Html5Qrcode('qrr');
-    var config = {
-      fps: 10,
-      qrbox: {width:240, height:240},
-      aspectRatio: 1.0,
-      formatsToSupport: [
-        Html5QrcodeSupportedFormats.QR_CODE,
-        Html5QrcodeSupportedFormats.CODE_128,
-        Html5QrcodeSupportedFormats.CODE_39,
-        Html5QrcodeSupportedFormats.EAN_13,
-        Html5QrcodeSupportedFormats.EAN_8,
-        Html5QrcodeSupportedFormats.PDF_417,
-        Html5QrcodeSupportedFormats.DATA_MATRIX
-      ]
-    };
-    scanner.start({facingMode:'environment'}, config, onScanOk, function(){})
-    .then(function(){
-      scanning = true;
-      document.getElementById('camph').style.display = 'none';
-      document.getElementById('corners').style.display = 'block';
-      var b = document.getElementById('btnsc');
-      b.textContent = '⏹ DETENER ESCANEO';
-      b.classList.add('on');
-      setStatus('Apunta al código de barras o QR');
-    })
-    .catch(function(err){
-      handleCamError(err);
-    });
-  } catch(e) {
-    handleCamError(e);
-  }
-}
-
-function handleCamError(err) {
-  scanning = false;
-  scanner = null;
-  var msg = '❌ No se pudo iniciar la cámara';
-  var s = String(err);
-  if (s.indexOf('NotAllowed') > -1 || s.indexOf('Permission') > -1)
-    msg = '❌ Permiso denegado — Ajustes → Safari → Cámara → Permitir';
-  else if (s.indexOf('NotFound') > -1)
-    msg = '❌ No se encontró cámara';
-  else if (s.indexOf('NotReadable') > -1)
-    msg = '❌ Cámara ocupada por otra app';
-  setStatus('Error');
-  showNotif(msg, 6000);
-}
-
-function stopScan() {
-  if (scanner) {
-    try { if(scanning) scanner.stop(); } catch(e){}
-    try { scanner.clear(); } catch(e){}
-    scanner = null;
-  }
-  scanning = false;
-  document.getElementById('camph').style.display = 'flex';
-  document.getElementById('corners').style.display = 'none';
-  document.getElementById('qrr').innerHTML = '';
-  var b = document.getElementById('btnsc');
-  b.textContent = '📷 INICIAR ESCANEO';
-  b.classList.remove('on');
-  setStatus('Listo');
-}
-
-function setStatus(t) { document.getElementById('camst').textContent = t; }
-
-function onScanOk(raw) {
-  var now = Date.now();
-  if (raw === lastCode && now - lastTime < DEBOUNCE) return;
-  lastCode = raw; lastTime = now;
-  var code = extractCode(raw);
-  processResult(code, raw);
-}
-
-// ═══ EXTRACT CODE ═══
-function extractCode(raw) {
-  var s = raw.trim();
-  // Already has dot format
-  var m1 = s.match(/\b(\d{9,13}\.\d{1,2})\b/);
-  if (m1) return m1[1];
-  // Coordinadora barcode: 7 + 11digits + 001 (15 chars)
-  if (/^\d{12,}$/.test(s)) {
-    // Try to match against loaded guides first
-    for (var key in guias) {
-      var base = key.indexOf('.') > -1 ? key.split('.')[0] : key;
-      if (base.length >= 8 && s.indexOf(base) > -1) return key;
-    }
-    // Coordinadora format: starts with 7, guide is digits 2-12
-    if (s.length === 15 && s[0] === '7') {
-      return s.substring(1,12) + '.1';
-    }
-    if (s[0] === '7' && s.length >= 12) {
-      return s.substring(1,12) + '.1';
-    }
-    // Pure barcode 10-13 digits
-    if (/^\d{10,13}$/.test(s)) return s;
-  }
-  // GUIA keyword
-  var m2 = s.match(/GUIA[:\s#]{0,5}(\d{8,13}(?:\.\d{1,2})?)/i);
-  if (m2) return m2[1];
-  // Any digits+dot+digits
-  var m3 = s.match(/(\d{6,}(?:\.\d{1,2})?)/);
-  if (m3) return m3[1];
-  return s;
-}
-
-// ═══ PROCESS RESULT ═══
-function processResult(code, raw) {
-  var box = document.getElementById('qrbox');
-  box.classList.remove('ok','err');
-  void box.offsetWidth;
-  if (guias[code]) {
-    var g = guias[code];
-    if (g.estado === 'rev') {
-      showToast('dup','⚠️','YA REVISADA', code, 'Escaneada a las '+g.hora, '');
-      box.classList.add('err'); feedback(false);
-    } else {
-      g.estado = 'rev';
-      g.hora = timeNow();
-      saveData(); updateStats(); updateProgress(); renderList();
-      showToast('ok','✅','REVISADA', code, g.destino||g.hora, g.contenido||'');
-      box.classList.add('ok'); feedback(true);
-    }
+// 5. Gestión Manual (Añadir/Editar)
+function abrirModalManual(id = null) {
+  const mod = document.getElementById('modalManual');
+  const btnEliminar = document.getElementById('btnEliminar');
+  
+  if (id) {
+    const item = inventario.items.find(i => i.id === id);
+    document.getElementById('modTitulo').textContent = 'Editar Producto';
+    document.getElementById('modId').value = item.id;
+    document.getElementById('modCat').value = item.cat;
+    document.getElementById('modNombre').value = item.nombre;
+    document.getElementById('modStock').value = item.stock;
+    document.getElementById('modMin').value = item.min;
+    document.getElementById('modPrecio').value = item.precio;
+    btnEliminar.style.display = 'block';
   } else {
-    var hint = (raw !== code) ? 'Leído: '+raw.substring(0,35) : 'No está en la lista';
-    showToast('no','❌','NO ENCONTRADA', code, hint, '');
-    box.classList.add('err'); feedback(false);
+    document.getElementById('modTitulo').textContent = 'Añadir Producto';
+    document.getElementById('modId').value = '';
+    document.getElementById('modNombre').value = '';
+    document.getElementById('modStock').value = '0';
+    document.getElementById('modMin').value = '5';
+    document.getElementById('modPrecio').value = '0';
+    btnEliminar.style.display = 'none';
+  }
+  mod.style.display = 'flex';
+}
+
+function cerrarModalManual() { document.getElementById('modalManual').style.display = 'none'; }
+
+function guardarManual() {
+  const id = document.getElementById('modId').value;
+  const data = {
+    cat: document.getElementById('modCat').value,
+    nombre: document.getElementById('modNombre').value,
+    stock: parseInt(document.getElementById('modStock').value) || 0,
+    min: parseInt(document.getElementById('modMin').value) || 0,
+    precio: parseInt(document.getElementById('modPrecio').value) || 0
+  };
+
+  if(!data.nombre) return alert('El nombre es obligatorio');
+
+  if (id) {
+    const index = inventario.items.findIndex(i => i.id === id);
+    inventario.items[index] = { ...inventario.items[index], ...data };
+  } else {
+    inventario.items.push({ id: 'sku_' + Date.now(), ...data });
+  }
+
+  guardarEstado();
+  cerrarModalManual();
+}
+
+function eliminarProducto() {
+  const id = document.getElementById('modId').value;
+  if(confirm('¿Seguro que deseas eliminar este producto?')) {
+    inventario.items = inventario.items.filter(i => i.id !== id);
+    guardarEstado();
+    cerrarModalManual();
   }
 }
 
-function showToast(type, icon, lbl, code, sub, prod) {
-  var t = document.getElementById('toast');
-  t.className = 'toast show '+type;
-  document.getElementById('tic').textContent = icon;
-  document.getElementById('tlbl').textContent = lbl;
-  document.getElementById('tcode').textContent = code;
-  document.getElementById('tsub').textContent = sub;
-  document.getElementById('tprod').textContent = prod;
-  clearTimeout(t._t);
-  t._t = setTimeout(function(){ t.classList.remove('show'); }, 10000);
+// 6. Simulación de Ingreso de Factura (Entradas)
+let entradasTemp = [];
+function simularCargaFactura() {
+  // En tu código real, esto vendrá del parser del PDF de la factura
+  entradasTemp = [
+    { nombreOrg: "Ruana 3 botón polar", cant: 15, precio: 25500 },
+    { nombreOrg: "Ruana borrego", cant: 50, precio: 32000 }
+  ];
+  
+  const html = entradasTemp.map((prod, i) => `
+    <div style="background:var(--sur2); padding:10px; border-radius:8px; border:1px solid var(--bor);">
+      <div style="font-size:11px; color:var(--txm); margin-bottom:4px;">Original: ${prod.nombreOrg}</div>
+      <input type="text" id="fac_nom_${i}" class="inp" value="${prod.nombreOrg}" style="margin-bottom:6px;">
+      <div style="display:flex; gap:6px;">
+        <select id="fac_cat_${i}" class="inp" style="flex:1; margin:0;">
+          ${inventario.categorias.map(c => `<option value="${c}">${c}</option>`).join('')}
+        </select>
+        <input type="number" id="fac_cant_${i}" class="inp" value="${prod.cant}" style="width:80px; margin:0;">
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('listaEntradas').innerHTML = html;
+  document.getElementById('modalFactura').style.display = 'flex';
 }
 
-function doManual() {
-  var v = document.getElementById('manInp').value.trim();
-  if (!v) return;
-  processResult(v, v);
-  document.getElementById('manInp').value = '';
-}
+function cerrarModalFactura() { document.getElementById('modalFactura').style.display = 'none'; }
 
-function timeNow() {
-  return new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
-}
+function confirmarFactura() {
+  entradasTemp.forEach((prod, i) => {
+    const nombre = document.getElementById(`fac_nom_${i}`).value;
+    const cat = document.getElementById(`fac_cat_${i}`).value;
+    const cant = parseInt(document.getElementById(`fac_cant_${i}`).value);
 
-// ═══ FEEDBACK ═══
-function feedback(ok) {
-  if (prefs.vibe && navigator.vibrate) navigator.vibrate(ok ? [30,15,30] : [80,25,80]);
-  if (prefs.sound) beep(ok);
-}
-function beep(ok) {
-  try {
-    var ctx = new (window.AudioContext||window.webkitAudioContext)();
-    var o = ctx.createOscillator(), g = ctx.createGain();
-    o.connect(g); g.connect(ctx.destination);
-    o.frequency.value = ok ? 880 : 300; o.type = 'sine';
-    g.gain.setValueAtTime(0.3, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.35);
-    o.start(); o.stop(ctx.currentTime+0.35);
-  } catch(e){}
-}
-
-// ═══ PDF IMPORT ═══
-function importPDF(e) {
-  var file = e.target.files[0]; if (!file) return;
-  e.target.value = '';
-  var prog = document.getElementById('pdfprog');
-  prog.style.display = 'block';
-  prog.textContent = '⏳ Leyendo PDF...';
-  if (typeof pdfjsLib === 'undefined') { prog.textContent = '❌ PDF.js no disponible'; return; }
-  file.arrayBuffer().then(function(ab){
-    return pdfjsLib.getDocument({data:ab}).promise;
-  }).then(function(pdf){
-    var pages = [];
-    for (var i=1; i<=pdf.numPages; i++) pages.push(i);
-    var text = '';
-    return pages.reduce(function(p, pgNum){
-      return p.then(function(){
-        prog.textContent = '⏳ Página '+pgNum+' / '+pdf.numPages+'...';
-        return pdf.getPage(pgNum).then(function(pg){
-          return pg.getTextContent().then(function(ct){
-            text += ct.items.map(function(x){ return x.str; }).join(' ') + '\n';
-          });
-        });
-      });
-    }, Promise.resolve()).then(function(){ return text; });
-  }).then(function(text){
-    var codes = extractFromPDF(text);
-    if (!codes.length) {
-      prog.textContent = '⚠️ Sin guías detectadas';
-      showNotif('⚠️ No se encontraron guías en el PDF', 5000);
-      return;
-    }
-    var added = 0;
-    codes.forEach(function(item){
-      if (!guias[item.code]) {
-        guias[item.code] = {destino:item.destino||'', contenido:item.contenido||'', estado:'pen', hora:null};
-        added++;
-      }
-    });
-    saveData(); renderList(); updateStats(); updateProgress();
-    prog.textContent = '✅ '+codes.length+' guías — '+added+' nuevas agregadas';
-    showNotif('✅ '+added+' guías importadas');
-    goTab('vg');
-  }).catch(function(err){
-    console.error(err);
-    prog.textContent = '❌ Error leyendo el PDF';
-    showNotif('❌ No se pudo leer el PDF', 4000);
-  });
-}
-
-// ═══ EXTRACT FROM PDF ═══
-function extractFromPDF(text) {
-  var map = {};
-
-  // STEP 1: Manifest lines — most reliable source
-  // "Nro: 1 Guia: 36395575137 Ciudad Destino: BOGOTA Valor..."
-  var re1 = /Nro:\s*\d+\s+Guia:\s*(\d{8,13}(?:\.\d{1,2})?)\s+Ciudad Destino:\s*([^\n\r]+?)\s+Valor/gi;
-  var m;
-  while ((m = re1.exec(text)) !== null) {
-    var code = m[1], dest = m[2].trim();
-    if (!map[code]) map[code] = {destino:dest, contenido:''};
-  }
-  // Without Valor
-  var re1b = /Nro:\s*\d+\s+Guia:\s*(\d{8,13}(?:\.\d{1,2})?)/gi;
-  while ((m = re1b.exec(text)) !== null) {
-    if (!map[m[1]]) map[m[1]] = {destino:'', contenido:''};
-  }
-
-  // STEP 2: Label blocks — extract product info
-  var blocks = text.split(/(?=GUIA:)/gi);
-  blocks.forEach(function(block){
-    var gm = block.match(/GUIA:\s*[\r\n]*\s*(\d{8,13}(?:\.\d{1,2})?)/i);
-    if (!gm) return;
-    var code = gm[1];
-    var products = [];
-
-    // Coordinadora format: * ID(XXXX)Product X qty  → keep product + qty
-    var re2 = /\*\s*ID\(\d+\)([^\n\r*]+)/gi;
-    while ((m = re2.exec(block)) !== null) {
-      var raw = m[1].trim();
-      var qtyMatch = raw.match(/\s+X\s+(\d+)\s*$/i);
-      var qty = qtyMatch ? ' x'+qtyMatch[1] : '';
-      var prod = raw
-        .replace(/\s+X\s+\d+\s*$/i,'')
-        .replace(/\$[\d.,]+/g,'')
-        .trim();
-      if (prod.length > 4 && prod.length < 100 &&
-          !/envío\s*prioritario/i.test(prod) &&
-          !/envio\s*prioritario/i.test(prod)) {
-        products.push(prod + qty);
-      }
-    }
-
-    // Interrapidisimo format: extract from "# PRODUCTO CANT" table section
-    if (products.length === 0) {
-      var prodSection = block.match(/#\s*PRODUCTO\s+CANT\s*([\s\S]+?)(?:www\.|Notas:|Powered|$)/i);
-      if (prodSection) {
-        var plines = prodSection[1].split(/[\n\r]+/);
-        plines.forEach(function(line){
-          var l = line.trim();
-          if (!l) return;
-          if (/^\$/.test(l)) return;           // skip price lines
-          if (/^\d+(\s+\d+)?$/.test(l)) return; // skip number-only lines
-          if (l.length < 6) return;
-          // Clean up
-          l = l.replace(/\$[\d.,]+.*/g,'').trim();
-          if (l.length > 6 && l.length < 120) products.push(l);
-        });
-      }
-    }
-
-    // Fallback: keyword-based search
-    if (products.length === 0) {
-      var re3 = /([A-Za-záéíóúñÁÉÍÓÚÑ][^$\n\r]{10,80}(?:Medidas|Metros|Talla|Abrigo|Tendedero|Protector)[^$\n\r]{0,60})/gi;
-      while ((m = re3.exec(block)) !== null) {
-        var prod2 = m[1]
-          .replace(/^(PRODUCTO\s+CANT\s*[\n\r]*)/i,'')
-          .replace(/\$[\d.,]+.*/g,'')
-          .trim();
-        if (prod2.length > 8 && prod2.length < 100) products.push(prod2);
-      }
-    }
-
-    var contenido = products.filter(function(v,i,a){ return a.indexOf(v)===i; }).slice(0,2).join(' | ');
-
-    if (!map[code]) {
-      map[code] = {destino:'', contenido:contenido};
+    // Buscar si existe para sumar, sino se crea
+    const existente = inventario.items.find(item => item.nombre.toLowerCase() === nombre.toLowerCase());
+    if (existente) {
+      existente.stock += cant;
     } else {
-      if (!map[code].contenido && contenido) map[code].contenido = contenido;
+      inventario.items.push({
+        id: 'sku_' + Date.now() + i,
+        cat: cat,
+        nombre: nombre,
+        stock: cant,
+        min: 5,
+        precio: prod.precio
+      });
     }
   });
 
-  // STEP 3: Deduplicate — prefer code with .1
-  var result = {};
-  Object.keys(map).forEach(function(code){
-    var base = code.indexOf('.') > -1 ? code.split('.')[0] : code;
-    var dot = base + '.1';
-    var key = map[dot] ? dot : code;
-    if (!result[key]) result[key] = map[code];
-    else {
-      if (!result[key].destino && map[code].destino) result[key].destino = map[code].destino;
-      if (!result[key].contenido && map[code].contenido) result[key].contenido = map[code].contenido;
+  guardarEstado();
+  cerrarModalFactura();
+  alert('Factura ingresada correctamente');
+}
+
+// 7. Lógica de Descuento (Para inyectar en tu Scanner de Guías)
+// Llama a esta función dentro de tu validación de "Guía Revisada Exitosa"
+window.descontarStockDeGuia = function(notasEscaneadas) {
+  let modificado = false;
+  const texto = notasEscaneadas.toUpperCase();
+  
+  inventario.items.forEach(item => {
+    if(texto.includes(item.nombre.toUpperCase()) && item.stock > 0) {
+      item.stock -= 1;
+      modificado = true;
+      console.log('Descontado 1 de:', item.nombre);
     }
   });
 
-  return Object.keys(result).map(function(code){
-    return {code:code, destino:result[code].destino, contenido:result[code].contenido};
-  });
+  if(modificado) guardarEstado();
 }
 
-// ═══ CSV / PASTE ═══
-function importCSV(e) {
-  var file = e.target.files[0]; if (!file) return;
-  var r = new FileReader();
-  r.onload = function(ev){ parseLines(ev.target.result); e.target.value=''; };
-  r.readAsText(file);
-}
-function importPaste() {
-  var t = document.getElementById('pasteArea').value;
-  if (!t.trim()) return;
-  parseLines(t);
-  document.getElementById('pasteArea').value = '';
-}
-function parseLines(text) {
-  var lines = text.split(/[\n\r]+/).map(function(l){ return l.trim(); }).filter(Boolean);
-  var added = 0;
-  lines.forEach(function(line){
-    var parts = line.split(/[,;\t]/);
-    var code = parts[0].trim();
-    var dest = parts[1] ? parts[1].trim() : '';
-    var cont = parts[2] ? parts[2].trim() : '';
-    if (code && !guias[code]) {
-      guias[code] = {destino:dest, contenido:cont, estado:'pen', hora:null};
-      added++;
-    }
-  });
-  saveData(); renderList(); updateStats(); updateProgress();
-  showNotif('✅ '+added+' guías agregadas');
-  goTab('vg');
-}
-
-// ═══ LIST ═══
-function setFilter(f) {
-  filter = f;
-  document.querySelectorAll('.fb').forEach(function(b){ b.classList.toggle('active', b.dataset.f===f); });
-  renderList();
-}
-
-function renderList() {
-  var q = (document.getElementById('sinp') ? document.getElementById('sinp').value : '').toUpperCase();
-  var el = document.getElementById('glist'); if (!el) return;
-  var entries = Object.keys(guias).filter(function(code){
-    var g = guias[code];
-    if (filter==='rev' && g.estado!=='rev') return false;
-    if (filter==='pen' && g.estado!=='pen') return false;
-    if (q && code.toUpperCase().indexOf(q)<0 && (g.destino||'').toUpperCase().indexOf(q)<0) return false;
-    return true;
-  });
-  if (!entries.length) {
-    el.innerHTML = '<div class="empty"><div style="font-size:40px;opacity:.35">📦</div><div>Sin guías que mostrar</div></div>';
-    return;
+function limpiarDatos() {
+  if(confirm('¿Borrar TODO el inventario?')) {
+    localStorage.removeItem(DB_NAME);
+    location.reload();
   }
-  entries.sort(function(a,b){
-    if (guias[a].estado===guias[b].estado) return a.localeCompare(b);
-    return guias[a].estado==='pen' ? -1 : 1;
-  });
-  el.innerHTML = entries.map(function(code){
-    var g = guias[code];
-    var isRev = g.estado==='rev';
-    return '<div class="gi '+(isRev?'rev':'pen')+'">' +
-      '<div class="gico">'+(isRev?'✅':'⏳')+'</div>' +
-      '<div class="ginf">' +
-        '<div class="gnum">'+code+'</div>' +
-        (g.destino ? '<div class="gdest">'+g.destino+'</div>' : '') +
-        (g.contenido ? '<div class="gprod">'+g.contenido+'</div>' : '') +
-      '</div>' +
-      '<span class="gbadge '+(isRev?'rev':'pen')+'">'+(isRev?'REVISADO':'PENDIENTE')+'</span>' +
-      (g.hora ? '<div class="gtime">'+g.hora+'</div>' : '') +
-      '<button class="gdel" onclick="delGuia(\''+code.replace(/\\/g,'\\\\').replace(/'/g,'\\\'')+'\')" ontouchend="function(e){e.preventDefault();delGuia(\''+code.replace(/\\/g,'\\\\').replace(/'/g,'\\\'')+'\');}">✕</button>' +
-    '</div>';
-  }).join('');
 }
 
-function delGuia(code) {
-  if (!guias[code]) return;
-  delete guias[code];
-  saveData(); renderList(); updateStats(); updateProgress();
-}
-
-// ═══ STATS ═══
-function updateStats() {
-  var all = Object.values(guias);
-  var rev = all.filter(function(g){ return g.estado==='rev'; }).length;
-  document.getElementById('cRev').textContent = rev;
-  document.getElementById('cPen').textContent = all.length - rev;
-}
-function updateProgress() {
-  var all = Object.values(guias), total = all.length;
-  var rev = all.filter(function(g){ return g.estado==='rev'; }).length;
-  var pct = total ? Math.round(rev/total*100) : 0;
-  document.getElementById('ppct').textContent = pct+'%';
-  document.getElementById('pfill').style.width = pct+'%';
-  document.getElementById('psub').textContent = rev+' de '+total+' guías revisadas';
-}
-
-// ═══ EXPORT ═══
-function exportCSV() {
-  var rows = ['Guia,Destino,Contenido,Estado,Hora'];
-  Object.keys(guias).forEach(function(c){
-    var g = guias[c];
-    rows.push([c, g.destino||'', g.contenido||'', g.estado==='rev'?'REVISADO':'PENDIENTE', g.hora||''].join(','));
-  });
-  var a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));
-  a.download = 'guias_'+new Date().toISOString().slice(0,10)+'.csv';
-  a.click();
-  showNotif('📤 CSV exportado');
-}
-function resetScanned() {
-  Object.keys(guias).forEach(function(c){ guias[c].estado='pen'; guias[c].hora=null; });
-  saveData(); renderList(); updateStats(); updateProgress();
-  showNotif('🔄 Escaneos reiniciados');
-}
-function clearAll() {
-  if (!confirm('¿Borrar TODAS las guías?')) return;
-  guias = {}; saveData(); renderList(); updateStats(); updateProgress();
-  showNotif('🗑️ Borrado todo');
-}
-
-// ═══ PERSISTENCE ═══
-function saveData() { try{localStorage.setItem('gs6',JSON.stringify(guias));}catch(e){} }
-function loadData() { try{var d=localStorage.getItem('gs6');if(d)guias=JSON.parse(d);}catch(e){} }
-function savePrefs() {
-  prefs.sound = document.getElementById('tSound').checked;
-  prefs.vibe = document.getElementById('tVibe').checked;
-  try{localStorage.setItem('gp6',JSON.stringify(prefs));}catch(e){}
-}
-function loadPrefs() {
-  try{
-    var p=localStorage.getItem('gp6'); if(p) prefs=JSON.parse(p);
-    document.getElementById('tSound').checked = prefs.sound!==false;
-    document.getElementById('tVibe').checked = prefs.vibe!==false;
-  }catch(e){}
-}
-
-// ═══ NOTIFICATIONS ═══
-var nT;
-function showNotif(msg, ms) {
-  ms = ms||2800;
-  var el = document.getElementById('notif');
-  el.textContent = msg; el.classList.add('show');
-  clearTimeout(nT); nT = setTimeout(function(){ el.classList.remove('show'); }, ms);
-}
-
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function(){});
-init();
+// Iniciar app
+renderInventario();
 </script>
 </body>
 </html>

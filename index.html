@@ -4,7 +4,8 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <title>Inversiones Bestcol — Logística</title>
-<!-- Añade aquí los scripts de HTML5-QRCode y PDF.js si los tienes en CDNs -->
+<!-- Librerías Externas -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
 /* ═══ 1. VARIABLES Y BASE ═══ */
 * { box-sizing:border-box; margin:0; padding:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; }
@@ -12,7 +13,9 @@
   --bg:#0A0F1E; --sur:#111827; --sur2:#1a2235;
   --bor:rgba(255,255,255,0.08);
   --ac:#00E5FF; --ac2:#00B4CC;
-  --gr:#00D68F; --rd:#FF4D6A; --rd2:rgba(255,77,106,0.15);
+  --gr:#00D68F; --gr2:rgba(0,214,143,0.12);
+  --rd:#FF4D6A; --rd2:rgba(255,77,106,0.15);
+  --yw:#FFB800;
   --tx:#E8EDF5; --txm:#6B7A99;
 }
 body { background:var(--bg); color:var(--tx); height:100vh; overflow:hidden; }
@@ -26,6 +29,13 @@ header { display:flex; align-items:center; justify-content:space-between; paddin
 .logo-tx span { color:var(--ac); }
 .logo-by { font-size:10px; color:var(--txm); }
 
+.stats { display:flex; gap:6px; }
+.chip { display:flex; align-items:center; gap:5px; background:var(--sur2); border:1px solid var(--bor); border-radius:20px; padding:4px 10px; font-size:12px; font-weight:600; color:var(--txm); }
+.chip .dot { width:6px; height:6px; border-radius:50%; }
+.chip.rev .dot { background:var(--gr); }
+.chip.pen .dot { background:var(--yw); }
+.chip .n { color:var(--tx); }
+
 .tabs { display:flex; background:var(--sur); border-bottom:1px solid var(--bor); flex-shrink:0; }
 .tab { flex:1; padding:12px 0; font-size:11px; font-weight:600; color:var(--txm); border:none; background:none; cursor:pointer; border-bottom:2px solid transparent; text-align:center; }
 .tab.active { color:var(--ac); border-bottom-color:var(--ac); }
@@ -34,7 +44,22 @@ header { display:flex; align-items:center; justify-content:space-between; paddin
 .view { flex:1; overflow-y:auto; padding:16px; display:none; flex-direction:column; gap:16px; }
 .view.active { display:flex; }
 
-/* ═══ 4. UI INVENTARIO PROFESIONAL ═══ */
+/* ═══ 4. UI ESCÁNER (Tu diseño original) ═══ */
+.qrbox { width:100%; border-radius:20px; overflow:hidden; background:#000; position:relative; min-height:260px; display:flex; align-items:center; justify-content:center; border:1px solid var(--bor); }
+#reader { width: 100%; }
+#reader video { object-fit: cover; border-radius: 20px; }
+.camph { display:flex; flex-direction:column; align-items:center; gap:8px; color:var(--txm); font-size:13px; position:absolute; z-index:1; }
+
+.toast { width:100%; border-radius:14px; padding:12px 16px; display:flex; align-items:center; gap:12px; background:var(--gr2); border:1px solid rgba(0,214,143,.35); display:none; }
+.tic { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; background:rgba(0,214,143,.2); }
+.tlbl { font-size:10px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--gr); }
+.tcode { font-size:16px; font-weight:700; color:var(--tx); }
+.tsub { font-size:11px; color:var(--txm); }
+
+.btnsc { width:100%; height:52px; background:linear-gradient(135deg,var(--ac),var(--ac2)); color:#0A0F1E; border:none; border-radius:14px; font-size:16px; font-weight:700; letter-spacing:1px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 20px rgba(0,229,255,.25); }
+.mansec { width:100%; margin-top:10px; }
+
+/* ═══ 5. UI INVENTARIO PROFESIONAL ═══ */
 .inv-header { display:flex; justify-content:space-between; align-items:center; background:var(--sur); padding:16px; border-radius:14px; border:1px solid var(--bor); }
 .slbl { font-size:10px; font-weight:600; text-transform:uppercase; color:var(--txm); margin-bottom:4px; }
 .btnp { background:var(--ac); color:#0A0F1E; border:none; padding:10px; border-radius:8px; font-weight:600; cursor:pointer; flex:1; }
@@ -55,13 +80,12 @@ header { display:flex; align-items:center; justify-content:space-between; paddin
 .stock-badge { padding:4px 8px; border-radius:6px; font-size:12px; font-weight:700; background:var(--sur2); min-width:36px; text-align:center; }
 .stock-badge.low { background:var(--rd2); color:var(--rd); border:1px solid rgba(255,77,106,0.3); }
 
-/* ═══ 5. MODALES ═══ */
+/* ═══ 6. MODALES ═══ */
 .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:999; align-items:center; justify-content:center; padding:16px; }
 .modal-content { background:var(--sur); width:100%; max-width:400px; border-radius:16px; border:1px solid var(--bor); padding:20px; display:flex; flex-direction:column; max-height:85vh; }
 .inp { background:var(--sur2); border:1px solid var(--bor); color:var(--tx); padding:10px; border-radius:8px; font-size:13px; width:100%; outline:none; margin-bottom:10px; }
 .inp:focus { border-color:var(--ac); }
 .btn-red { background:transparent; color:var(--rd); border:1px solid var(--rd); padding:10px; border-radius:8px; font-weight:600; cursor:pointer; }
-
 .watermark { text-align:center; padding:20px; font-size:11px; color:var(--txm); opacity:0.5; margin-top:auto; }
 </style>
 </head>
@@ -77,26 +101,54 @@ header { display:flex; align-items:center; justify-content:space-between; paddin
         <div class="logo-by">Sistema de Control Logístico</div>
       </div>
     </div>
+    <div class="stats">
+      <div class="chip rev"><span class="dot"></span><span class="n" id="c-rev">0</span><span>Rev</span></div>
+      <div class="chip pen"><span class="dot"></span><span class="n" id="c-pen">0</span><span>Pen</span></div>
+    </div>
   </header>
 
   <!-- TABS -->
   <nav class="tabs">
-    <button class="tab" onclick="goTab('v-scan', this)">📷 ESCANEAR</button>
-    <button class="tab active" onclick="goTab('v-inv', this)">📦 INVENTARIO</button>
+    <button class="tab active" onclick="goTab('v-scan', this)">📷 ESCANEAR</button>
+    <button class="tab" onclick="goTab('v-inv', this)">📦 INVENTARIO</button>
     <button class="tab" onclick="goTab('v-guias', this)">📋 GUIAS</button>
     <button class="tab" onclick="goTab('v-conf', this)">⚙️ CONFIG</button>
   </nav>
 
   <!-- VISTA: ESCANEAR -->
-  <div id="v-scan" class="view">
-    <div style="text-align:center; color:var(--txm); margin-top:50px;">
-      (Aquí mantienes tu contenedor HTML5-QRCode actual)
+  <div id="v-scan" class="view active">
+    
+    <div class="qrbox">
+      <div class="camph" id="cam-placeholder">
+        <div style="font-size:40px;opacity:.3">📷</div>
+        <div>Toca INICIAR ESCANEO</div>
+      </div>
+      <div id="reader"></div>
+    </div>
+
+    <!-- Notificación de Escaneo -->
+    <div class="toast" id="scan-toast">
+      <div class="tic">✅</div>
+      <div>
+        <div class="tlbl">REVISADA</div>
+        <div class="tcode" id="toast-code">---</div>
+        <div class="tsub" id="toast-sub">---</div>
+      </div>
+    </div>
+
+    <button class="btnsc" id="btn-scan" onclick="toggleScanner()">📷 INICIAR ESCANEO</button>
+
+    <div class="mansec">
+      <div class="slbl">Ingresar número manualmente</div>
+      <div style="display:flex; gap:8px;">
+        <input class="inp" type="text" id="manual-input" placeholder="Ej: 36395575137.1" style="margin:0;"/>
+        <button class="btnsm" onclick="verificarGuiaManual()">Verificar</button>
+      </div>
     </div>
   </div>
 
   <!-- VISTA: INVENTARIO -->
-  <div id="v-inv" class="view active">
-    
+  <div id="v-inv" class="view">
     <div class="inv-header">
       <div>
         <div class="slbl">Total Inventario</div>
@@ -113,27 +165,24 @@ header { display:flex; align-items:center; justify-content:space-between; paddin
       <button class="btnsm" onclick="abrirModalManual()">➕ Añadir Manual</button>
     </div>
 
-    <!-- Lista Dinámica -->
     <div id="invContenedor"></div>
   </div>
 
   <!-- VISTA: GUIAS -->
   <div id="v-guias" class="view">
-    <div style="text-align:center; color:var(--txm); margin-top:50px;">(Lista de guías escaneadas)</div>
+    <div style="text-align:center; color:var(--txm); margin-top:50px;">Aquí aparecerá el historial de guías escaneadas.</div>
   </div>
 
   <!-- VISTA: CONFIGURACIÓN -->
   <div id="v-conf" class="view">
     <div class="slbl">Opciones de Sistema</div>
-    <button class="btnsm" onclick="limpiarDatos()">Borrar Todo el Inventario</button>
-    
-    <!-- Marca de agua minimalista -->
+    <button class="btnsm" style="width:100%; border-color:var(--rd); color:var(--rd);" onclick="limpiarDatos()">Borrar Todo el Sistema</button>
     <div class="watermark">Desarrollado por Felipe Ensuncho</div>
   </div>
 
 </div>
 
-<!-- MODAL: GESTIÓN MANUAL (Agregar / Editar) -->
+<!-- MODAL: GESTIÓN MANUAL (Agregar / Editar Inventario) -->
 <div id="modalManual" class="modal-overlay">
   <div class="modal-content">
     <h3 id="modTitulo" style="color:var(--ac); margin-bottom:16px;">Añadir Producto</h3>
@@ -176,10 +225,8 @@ header { display:flex; align-items:center; justify-content:space-between; paddin
 <div id="modalFactura" class="modal-overlay">
   <div class="modal-content" style="max-height:90vh;">
     <h3 style="color:var(--gr); margin-bottom:10px;">Revisión de Factura</h3>
-    <p style="font-size:12px; color:var(--txm); margin-bottom:16px;">Asigna la categoría y corrige el nombre si es necesario antes de ingresar el stock.</p>
-    
+    <p style="font-size:12px; color:var(--txm); margin-bottom:16px;">Verifica la categoría y nombre antes de ingresar.</p>
     <div id="listaEntradas" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:12px; margin-bottom:16px; padding-right:5px;"></div>
-
     <div style="display:flex; gap:10px;">
       <button class="btnsm" onclick="cerrarModalFactura()">Cancelar</button>
       <button class="btnp" style="background:var(--gr); color:#000;" onclick="confirmarFactura()">✅ Ingresar al Inventario</button>
@@ -188,20 +235,32 @@ header { display:flex; align-items:center; justify-content:space-between; paddin
 </div>
 
 <script>
-/* ═══ LÓGICA CORE: INVENTARIO BESTCOL ═══ */
-
-// 1. Inicialización y Persistencia en LocalStorage
-const DB_NAME = 'bestcol_inv_v1';
-let inventario = JSON.parse(localStorage.getItem(DB_NAME)) || {
-  ultimaActualizacion: new Date().toLocaleString('es-CO'),
-  categorias: ["Abrigos", "Manteles", "PVC", "Insumos"],
-  items: [
-    { id: "1", cat: "Abrigos", nombre: "Abrigo Virgen Guadalupe", stock: 12, min: 5, precio: 32000 },
-    { id: "2", cat: "Manteles", nombre: "Mantel Florenza 6 Puestos", stock: 6, min: 5, precio: 45000 }
-  ]
+/* =========================================
+   1. ESTADO GLOBAL E INVENTARIO
+========================================= */
+const DB_NAME = 'bestcol_data_v2';
+let appData = JSON.parse(localStorage.getItem(DB_NAME)) || {
+  inventario: {
+    ultimaActualizacion: new Date().toLocaleString('es-CO'),
+    categorias: ["Abrigos", "Manteles", "PVC", "Insumos"],
+    items: [
+      { id: "1", cat: "Abrigos", nombre: "Abrigo Virgen Guadalupe", stock: 12, min: 5, precio: 32000 },
+      { id: "2", cat: "Manteles", nombre: "Mantel Florenza 6 Puestos", stock: 6, min: 5, precio: 45000 }
+    ]
+  },
+  estadisticas: { revisadas: 78, pendientes: 1 }
 };
 
-// 2. Control de Tabs
+function guardarEstado() {
+  appData.inventario.ultimaActualizacion = new Date().toLocaleString('es-CO');
+  localStorage.setItem(DB_NAME, JSON.stringify(appData));
+  renderInventario();
+  actualizarContadores();
+}
+
+/* =========================================
+   2. INTERFAZ Y NAVEGACIÓN
+========================================= */
 function goTab(viewId, btn) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -209,14 +268,101 @@ function goTab(viewId, btn) {
   if(btn) btn.classList.add('active');
 }
 
-// 3. Renderizar Inventario
+function actualizarContadores() {
+  document.getElementById('c-rev').textContent = appData.estadisticas.revisadas;
+  document.getElementById('c-pen').textContent = appData.estadisticas.pendientes;
+}
+
+function limpiarDatos() {
+  if(confirm('¿Borrar TODOS los datos de la aplicación?')) {
+    localStorage.removeItem(DB_NAME);
+    location.reload();
+  }
+}
+
+/* =========================================
+   3. LÓGICA DEL ESCÁNER Y DESCUENTO
+========================================= */
+let html5QrcodeScanner;
+let scanning = false;
+
+function toggleScanner() {
+  const btn = document.getElementById('btn-scan');
+  const ph = document.getElementById('cam-placeholder');
+  
+  if(!scanning) {
+    ph.style.display = 'none';
+    html5QrcodeScanner = new Html5Qrcode("reader");
+    html5QrcodeScanner.start(
+      { facingMode: "environment" }, 
+      { fps: 10, qrbox: { width: 250, height: 100 } },
+      procesarGuia,
+      (err) => { /* ignorar errores de frame */ }
+    ).catch(err => {
+      alert("Error al abrir cámara: " + err);
+      ph.style.display = 'flex';
+    });
+    btn.innerHTML = "🛑 DETENER ESCÁNER";
+    btn.style.background = "var(--rd)";
+    scanning = true;
+  } else {
+    if(html5QrcodeScanner) {
+      html5QrcodeScanner.stop().then(() => {
+        html5QrcodeScanner.clear();
+        ph.style.display = 'flex';
+      });
+    }
+    btn.innerHTML = "📷 INICIAR ESCANEO";
+    btn.style.background = "linear-gradient(135deg,var(--ac),var(--ac2))";
+    scanning = false;
+  }
+}
+
+function verificarGuiaManual() {
+  const code = document.getElementById('manual-input').value;
+  if(code) procesarGuia(code);
+}
+
+function procesarGuia(decodedText) {
+  // 1. Mostrar Toast de Éxito en pantalla
+  const toast = document.getElementById('scan-toast');
+  document.getElementById('toast-code').textContent = decodedText;
+  
+  // Aquí simulas la extracción de las notas de tu PDF base. 
+  // En tu app real, buscas este código (decodedText) en tu array de guías importadas.
+  let notasSimuladas = "Abrigo Virgen Guadalupe"; 
+  document.getElementById('toast-sub').textContent = "Notas: " + notasSimuladas;
+  
+  toast.style.display = 'flex';
+  setTimeout(() => toast.style.display = 'none', 3000);
+
+  // 2. Descontar del Inventario automáticamente
+  let modificado = false;
+  const textoBuscado = notasSimuladas.toUpperCase();
+  
+  appData.inventario.items.forEach(item => {
+    if(textoBuscado.includes(item.nombre.toUpperCase()) && item.stock > 0) {
+      item.stock -= 1;
+      modificado = true;
+    }
+  });
+
+  // 3. Actualizar estadísticas
+  appData.estadisticas.revisadas += 1;
+  appData.estadisticas.pendientes = Math.max(0, appData.estadisticas.pendientes - 1);
+  guardarEstado();
+}
+
+/* =========================================
+   4. LÓGICA DEL INVENTARIO (VISTA Y MODALES)
+========================================= */
 function renderInventario() {
   const cont = document.getElementById('invContenedor');
   let html = '';
   let totalGlobal = 0;
 
-  inventario.categorias.forEach(cat => {
-    const itemsCat = inventario.items.filter(i => i.cat === cat);
+  appData.inventario.categorias.forEach(cat => {
+    const itemsCat = appData.inventario.items.filter(i => i.cat === cat);
     if(itemsCat.length === 0) return;
 
     let subtotal = 0;
@@ -230,7 +376,7 @@ function renderInventario() {
         <div class="inv-item" onclick="abrirModalManual('${item.id}')" style="cursor:pointer;">
           <div class="inv-info">
             <div class="inv-name">${alertIcon}${item.nombre}</div>
-            <div class="inv-price">$${item.precio.toLocaleString('es-CO')} x unidad</div>
+            <div class="inv-price">$${item.precio.toLocaleString('es-CO')} x ud</div>
           </div>
           <div class="inv-stock">
             <span class="${badgeClass}">${item.stock}</span>
@@ -253,23 +399,15 @@ function renderInventario() {
 
   cont.innerHTML = html;
   document.getElementById('invTotalGlobal').textContent = '$ ' + totalGlobal.toLocaleString('es-CO');
-  document.getElementById('invFecha').textContent = inventario.ultimaActualizacion;
+  document.getElementById('invFecha').textContent = appData.inventario.ultimaActualizacion;
 }
 
-// 4. Guardar Cambios
-function guardarEstado() {
-  inventario.ultimaActualizacion = new Date().toLocaleString('es-CO');
-  localStorage.setItem(DB_NAME, JSON.stringify(inventario));
-  renderInventario();
-}
-
-// 5. Gestión Manual (Añadir/Editar)
 function abrirModalManual(id = null) {
   const mod = document.getElementById('modalManual');
   const btnEliminar = document.getElementById('btnEliminar');
   
   if (id) {
-    const item = inventario.items.find(i => i.id === id);
+    const item = appData.inventario.items.find(i => i.id === id);
     document.getElementById('modTitulo').textContent = 'Editar Producto';
     document.getElementById('modId').value = item.id;
     document.getElementById('modCat').value = item.cat;
@@ -305,10 +443,10 @@ function guardarManual() {
   if(!data.nombre) return alert('El nombre es obligatorio');
 
   if (id) {
-    const index = inventario.items.findIndex(i => i.id === id);
-    inventario.items[index] = { ...inventario.items[index], ...data };
+    const index = appData.inventario.items.findIndex(i => i.id === id);
+    appData.inventario.items[index] = { ...appData.inventario.items[index], ...data };
   } else {
-    inventario.items.push({ id: 'sku_' + Date.now(), ...data });
+    appData.inventario.items.push({ id: 'sku_' + Date.now(), ...data });
   }
 
   guardarEstado();
@@ -318,16 +456,14 @@ function guardarManual() {
 function eliminarProducto() {
   const id = document.getElementById('modId').value;
   if(confirm('¿Seguro que deseas eliminar este producto?')) {
-    inventario.items = inventario.items.filter(i => i.id !== id);
+    appData.inventario.items = appData.inventario.items.filter(i => i.id !== id);
     guardarEstado();
     cerrarModalManual();
   }
 }
 
-// 6. Simulación de Ingreso de Factura (Entradas)
 let entradasTemp = [];
 function simularCargaFactura() {
-  // En tu código real, esto vendrá del parser del PDF de la factura
   entradasTemp = [
     { nombreOrg: "Ruana 3 botón polar", cant: 15, precio: 25500 },
     { nombreOrg: "Ruana borrego", cant: 50, precio: 32000 }
@@ -335,11 +471,11 @@ function simularCargaFactura() {
   
   const html = entradasTemp.map((prod, i) => `
     <div style="background:var(--sur2); padding:10px; border-radius:8px; border:1px solid var(--bor);">
-      <div style="font-size:11px; color:var(--txm); margin-bottom:4px;">Original: ${prod.nombreOrg}</div>
+      <div style="font-size:11px; color:var(--txm); margin-bottom:4px;">Detectado: ${prod.nombreOrg}</div>
       <input type="text" id="fac_nom_${i}" class="inp" value="${prod.nombreOrg}" style="margin-bottom:6px;">
       <div style="display:flex; gap:6px;">
         <select id="fac_cat_${i}" class="inp" style="flex:1; margin:0;">
-          ${inventario.categorias.map(c => `<option value="${c}">${c}</option>`).join('')}
+          ${appData.inventario.categorias.map(c => `<option value="${c}">${c}</option>`).join('')}
         </select>
         <input type="number" id="fac_cant_${i}" class="inp" value="${prod.cant}" style="width:80px; margin:0;">
       </div>
@@ -358,53 +494,25 @@ function confirmarFactura() {
     const cat = document.getElementById(`fac_cat_${i}`).value;
     const cant = parseInt(document.getElementById(`fac_cant_${i}`).value);
 
-    // Buscar si existe para sumar, sino se crea
-    const existente = inventario.items.find(item => item.nombre.toLowerCase() === nombre.toLowerCase());
+    const existente = appData.inventario.items.find(item => item.nombre.toLowerCase() === nombre.toLowerCase());
     if (existente) {
       existente.stock += cant;
     } else {
-      inventario.items.push({
+      appData.inventario.items.push({
         id: 'sku_' + Date.now() + i,
-        cat: cat,
-        nombre: nombre,
-        stock: cant,
-        min: 5,
-        precio: prod.precio
+        cat: cat, nombre: nombre, stock: cant, min: 5, precio: prod.precio
       });
     }
   });
 
   guardarEstado();
   cerrarModalFactura();
-  alert('Factura ingresada correctamente');
-}
-
-// 7. Lógica de Descuento (Para inyectar en tu Scanner de Guías)
-// Llama a esta función dentro de tu validación de "Guía Revisada Exitosa"
-window.descontarStockDeGuia = function(notasEscaneadas) {
-  let modificado = false;
-  const texto = notasEscaneadas.toUpperCase();
-  
-  inventario.items.forEach(item => {
-    if(texto.includes(item.nombre.toUpperCase()) && item.stock > 0) {
-      item.stock -= 1;
-      modificado = true;
-      console.log('Descontado 1 de:', item.nombre);
-    }
-  });
-
-  if(modificado) guardarEstado();
-}
-
-function limpiarDatos() {
-  if(confirm('¿Borrar TODO el inventario?')) {
-    localStorage.removeItem(DB_NAME);
-    location.reload();
-  }
+  alert('Factura ingresada y sumada al inventario');
 }
 
 // Iniciar app
 renderInventario();
+actualizarContadores();
 </script>
 </body>
 </html>
